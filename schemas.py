@@ -18,3 +18,7 @@ class User(UserBase):
 
 class UserWithToken(User):
     access_token: str
+
+class UserWithRefreshToken(BaseModel):
+    id: str
+    refresh_token: str

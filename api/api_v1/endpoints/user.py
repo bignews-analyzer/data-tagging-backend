@@ -1,9 +1,7 @@
 import schemas
 from crud import crud_user
-from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status, Response
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from api.depends import get_db
 from core.security import verify_password, create_access_token, create_refresh_token
@@ -32,6 +30,11 @@ async def login(response: Response, form_data: schemas.UserLogin, db: Session = 
         )
     access_token = create_access_token(user.email)
     refresh_token = create_refresh_token(user.email)
+
+    refresh = crud_user.get_refresh_with_user(db, user_id=user.id)
+    if refresh is not None:
+        crud_user.delete_refresh_with_user(db, user_id=user.id)
+    crud_user.create_refresh_with_user(db, schemas.UserWithRefreshToken(id=user.id, refresh_token=refresh_token))
 
     response.set_cookie(
         key='refresh_token',
