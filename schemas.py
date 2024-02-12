@@ -6,9 +6,15 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+class UserLogin(UserBase):
+    password: str
+
 class User(UserBase):
     id: str
     is_active: bool
 
     class Config:
         orm_mode = True
+
+class UserWithToken(User):
+    access_token: str
