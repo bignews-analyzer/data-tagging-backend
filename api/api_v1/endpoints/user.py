@@ -52,6 +52,10 @@ async def login(response: Response, form_data: schemas.UserLogin, db: Session = 
     )
     return response_body
 
+@router.get("/logout")
+async def logout():
+    pass
+
 @router.get("", response_model=list[schemas.User])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = crud_user.get_users(db, skip=skip, limit=limit)

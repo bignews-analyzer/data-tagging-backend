@@ -9,9 +9,4 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
-
-class RefreshToken(Base):
-    __tablename__ = 'refresh_token'
-
-    id = Column(String(36), ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), primary_key=True, nullable=False)
-    refresh_token = Column(String(255), nullable=False)
+    is_superuser = Column(Boolean, default=False, nullable=False)
