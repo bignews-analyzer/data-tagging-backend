@@ -5,6 +5,7 @@ from jose import jwt
 from passlib.context import CryptContext
 
 from core.config import settings
+from fastapi import HTTPException, status
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -27,6 +28,26 @@ def create_refresh_token(subject: Union[str, Any], expires_delta: timedelta = No
     to_encode = {"exp": expires_delta, "sub": str(subject)}
     encoded_jwt = jwt.encode(to_encode, settings.REFRESH_SECRET_KEY, settings.REFRESH_TOKEN_ENCODE_ALGORITHM)
     return encoded_jwt, expires_delta
+
+def decode_access_token(token: str):
+    try:
+        decoded = jwt.decode(token, settings.ACCESS_SECRET_KEY, algorithms=settings.ACCESS_TOKEN_ENCODE_ALGORITHM)
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid access token"
+        )
+    return decoded
+
+def decode_refresh_token(token: str):
+    try:
+        decoded = jwt.decode(token, settings.REFRESH_SECRET_KEY, algorithms=settings.REFRESH_TOKEN_ENCODE_ALGORITHM)
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid access token"
+        )
+    return decoded
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password + settings.PASSWORD_SALT, hashed_password)

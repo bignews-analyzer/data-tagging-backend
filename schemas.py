@@ -18,3 +18,6 @@ class User(UserBase):
 
 class UserWithToken(User):
     access_token: str
+
+class AccessToken(BaseModel):
+    access_token: str
