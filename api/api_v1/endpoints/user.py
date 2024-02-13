@@ -5,6 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from api.depends import get_db
 from core.security import verify_password, create_access_token, create_refresh_token
+from datetime import datetime
+from database.redis_session import redis_session_refresh, redis_session_access
 
 router = APIRouter()
 
@@ -28,13 +30,14 @@ async def login(response: Response, form_data: schemas.UserLogin, db: Session = 
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect email or password"
         )
-    access_token = create_access_token(user.email)
-    refresh_token = create_refresh_token(user.email)
+    access_token, access_token_expire = create_access_token(user.email)
+    refresh_token, refresh_token_expire = create_refresh_token(user.email)
 
-    refresh = crud_user.get_refresh_with_user(db, user_id=user.id)
-    if refresh is not None:
-        crud_user.delete_refresh_with_user(db, user_id=user.id)
-    crud_user.create_refresh_with_user(db, schemas.UserWithRefreshToken(id=user.id, refresh_token=refresh_token))
+    refresh_redis_expire_sec = int((refresh_token_expire - datetime.utcnow()).total_seconds()) - 1
+    redis_session_refresh.set(user.id, refresh_token, ex=refresh_redis_expire_sec)
+
+    access_redis_expire_sec = int((access_token_expire - datetime.utcnow()).total_seconds()) - 1
+    redis_session_access.set(user.id, access_token, ex=access_redis_expire_sec)
 
     response.set_cookie(
         key='refresh_token',
