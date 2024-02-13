@@ -18,7 +18,7 @@ class JWTBearer(HTTPBearer):
             if access_token_in_redis is None:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Invalid access token"
+                    detail="Invalid token"
                 )
             return token_decoded
         else:

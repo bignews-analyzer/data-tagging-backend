@@ -1,3 +1,5 @@
+from jose import jwt
+
 import schemas
 from crud import crud_user
 
@@ -18,26 +20,7 @@ from api.auth_bearer import JWTBearer
 
 router = APIRouter()
 
-@router.post("", response_model=schemas.User)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = crud_user.get_user_by_email(db, email=user.email)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    return crud_user.create_user(db=db, user=user)
-
-@router.post("/login", response_model=schemas.UserWithToken)
-async def login(response: Response, form_data: schemas.UserLogin, db: Session = Depends(get_db)):
-    user = crud_user.get_user_by_email(db, email=form_data.email)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect email or password"
-        )
-    if not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect email or password"
-        )
+def token_generate(response: Response, user: schemas.User):
     access_token, access_token_expire = create_access_token(user.id)
     refresh_token, refresh_token_expire = create_refresh_token(user.id)
 
@@ -60,6 +43,28 @@ async def login(response: Response, form_data: schemas.UserLogin, db: Session = 
     )
     return response_body
 
+@router.post("", response_model=schemas.User)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = crud_user.get_user_by_email(db, email=user.email)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    return crud_user.create_user(db=db, user=user)
+
+@router.post("/login", response_model=schemas.UserWithToken)
+async def login(response: Response, form_data: schemas.UserLogin, db: Session = Depends(get_db)):
+    user = crud_user.get_user_by_email(db, email=form_data.email)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect email or password"
+        )
+    if not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect email or password"
+        )
+    return token_generate(response, user)
+
 @router.get("/logout")
 async def logout(response: Response, token: dict = Depends(JWTBearer())):
     redis_session_refresh.delete(token['sub'])
@@ -67,7 +72,27 @@ async def logout(response: Response, token: dict = Depends(JWTBearer())):
     response.status_code = status.HTTP_200_OK
     return response
 
-
+@router.get("/refresh")
+async def refresh(request: Request, response: Response, db: Session = Depends(get_db)):
+    refresh_token = request.cookies['refresh_token']
+    decoded = decode_refresh_token(refresh_token)
+    saved_token = redis_session_refresh.get(decoded['sub'])
+    saved_token = saved_token if saved_token is not None else ''
+    saved_token = str(saved_token, encoding='utf-8')
+    if refresh_token != saved_token:
+        redis_session_refresh.delete(decoded['sub'])
+        redis_session_access.delete(decoded['sub'])
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid token"
+        )
+    user = crud_user.get_user(db, decoded['sub'])
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect email or password"
+        )
+    return token_generate(response, user)
 
 @router.get("", response_model=list[schemas.User])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
@@ -75,7 +100,7 @@ def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return users
 
 @router.get("/{user_id}", response_model=schemas.User)
-def read_user(user_id: int, db: Session = Depends(get_db)):
+def read_user(user_id: str, db: Session = Depends(get_db)):
     db_user = crud_user.get_user(db, user_id=user_id)
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
