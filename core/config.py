@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
 
     MYSQL_URL: str = os.environ.get('MYSQL_URL')
+    REDIS_HOST: str = os.environ.get('REDIS_HOST')
+    REDIS_PORT: str = os.environ.get('REDIS_PORT')
+    REDIS_PASSWORD: str = os.environ.get('REDIS_PASSWORD')
 
     ACCESS_TOKEN_ENCODE_ALGORITHM: str = os.environ.get('ACCESS_TOKEN_ENCODE_ALGORITHM')
     ACCESS_SECRET_KEY: str = os.environ.get('ACCESS_SECRET_KEY')
