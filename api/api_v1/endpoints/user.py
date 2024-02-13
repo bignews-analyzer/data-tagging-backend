@@ -2,7 +2,7 @@ import schemas
 from crud import crud_user
 
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from api.depends import get_db
 from core.security import (
@@ -14,6 +14,7 @@ from core.security import (
 )
 from datetime import datetime
 from database.redis_session import redis_session_refresh, redis_session_access
+from api.auth_bearer import JWTBearer
 
 router = APIRouter()
 
@@ -60,19 +61,13 @@ async def login(response: Response, form_data: schemas.UserLogin, db: Session = 
     return response_body
 
 @router.get("/logout")
-async def logout(response: Response, token: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
-    token_decoded = decode_access_token(token.credentials)
-    access_token_in_redis = redis_session_access.get(token_decoded['sub'])
-    if access_token_in_redis is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid access token"
-        )
-    redis_session_refresh.delete(token_decoded['sub'])
-    redis_session_access.delete(token_decoded['sub'])
-
+async def logout(response: Response, token: dict = Depends(JWTBearer())):
+    redis_session_refresh.delete(token['sub'])
+    redis_session_access.delete(token['sub'])
     response.status_code = status.HTTP_200_OK
     return response
+
+
 
 @router.get("", response_model=list[schemas.User])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

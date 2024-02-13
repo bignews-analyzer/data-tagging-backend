@@ -34,7 +34,7 @@ def decode_access_token(token: str):
         decoded = jwt.decode(token, settings.ACCESS_SECRET_KEY, algorithms=settings.ACCESS_TOKEN_ENCODE_ALGORITHM)
     except:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid access token"
         )
     return decoded
@@ -44,7 +44,7 @@ def decode_refresh_token(token: str):
         decoded = jwt.decode(token, settings.REFRESH_SECRET_KEY, algorithms=settings.REFRESH_TOKEN_ENCODE_ALGORITHM)
     except:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid access token"
         )
     return decoded
