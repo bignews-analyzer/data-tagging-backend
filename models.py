@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Integer, String, DateTime, Boolean, ForeignKey
-from sqlalchemy.dialects.mysql import INTEGER, LONGTEXT, DATE
+from sqlalchemy.dialects.mysql import INTEGER, LONGTEXT, DATE, DATETIME
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database.mysql_session import Base
@@ -30,3 +30,16 @@ class ArticleData(Base):
     post_time = Column(DATE, nullable=False)
 
     company_fk = relationship("Company")
+
+class TaggingData(Base):
+    __tablename__ = 'tagging_data'
+
+    article_1 = Column(INTEGER(unsigned=True), ForeignKey("data.id", ondelete='restrict', onupdate='cascade'), primary_key=True, nullable=False)
+    article_2 = Column(INTEGER(unsigned=True), ForeignKey("data.id", ondelete='restrict', onupdate='cascade'), primary_key=True, nullable=False)
+    created_user = Column(String(36), ForeignKey("users.id", onupdate='cascade'))
+    created_time = Column(DATETIME, nullable=False)
+    label = Column(INTEGER, nullable=False)
+
+    article1_fk = relationship("ArticleData", foreign_keys=[article_1])
+    article2_fk = relationship("ArticleData", foreign_keys=[article_2])
+    user_fk = relationship("User")
