@@ -23,7 +23,7 @@ class ArticleData(Base):
     __tablename__ = 'data'
 
     id = Column(INTEGER(unsigned=True), primary_key=True, nullable=False)
-    company = Column(INTEGER(unsigned=True), ForeignKey("company.id"), default=None)
+    company = Column(INTEGER(unsigned=True), ForeignKey("company.id", ondelete='restrict', onupdate='cascade'), default=None)
     title = Column(String(255), nullable=False)
     content = Column(LONGTEXT, nullable=False)
     url = Column(String(255), nullable=False)

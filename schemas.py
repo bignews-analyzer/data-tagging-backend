@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr
+from datetime import date
 
 class UserBase(BaseModel):
     email: str
@@ -21,3 +22,21 @@ class UserWithToken(User):
 
 class AccessToken(BaseModel):
     access_token: str
+
+class Company(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        orm_mode = True
+
+class Article(BaseModel):
+    id: int
+    company_fk: Company
+    title: str
+    content: str
+    url: str
+    post_time: date
+
+    class Config:
+        orm_mode = True
